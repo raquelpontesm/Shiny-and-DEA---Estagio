@@ -4,18 +4,31 @@ library(shiny)
 library(plotly)
 library(shinythemes)
 library(ggplot2)
+library(ggrepel)
 library(DT)
 
 # ==== Global variables ====
 
-genesAA <- read.table("C:/Users/raque/Downloads/2020.5/Shiny-and-DEA---Estagio/inc/genes.DEA.NT.vs.TP.lst.AA")
-#genesEA
-#genesNT
-#genesTP
+load("dea.NT.rda")
+load("dea.TP.rda")
+load("dea.NT.TP.AA.rda")
+load("dea.NT.TP.EA.rda")
+
+genesNT <- read.table("inc/genes.DEA.NT.lst")
+genesNT <- as.factor(genesNT$V1)
+
+genesTP <- read.table("inc/genes.DEA.TP.lst")
+genesTP <- as.factor(genesTP$V1)
+
+genesAA <- read.table("inc/genes.DEA.NT.vs.TP.lst.AA")
+genesAA <- as.factor(genesAA$V1)
+
+genesEA <- read.table("inc/genes.DEA.NT.vs.TP.lst.EA")
+genesEA <- as.factor(genesEA$V1)
 
 # ==== ui.R ==== 
 
-ui <- navbarPage(theme=shinytheme("superhero"),"Gene Expression Analysis",
+ui <- navbarPage(theme=shinytheme("paper"),"Gene Expression Analysis",
   
   tabPanel("AA - TP x NT",
     sidebarLayout(
@@ -30,13 +43,13 @@ ui <- navbarPage(theme=shinytheme("superhero"),"Gene Expression Analysis",
         selectInput(
           inputId = "My_dataset",
           label = "B- Choose Gene ID to show it's full name:",
-          choices = levels(genesAA$V1)),
+          choices = levels(genesAA)),
       width = 3),
     
       mainPanel(
         tabsetPanel(
           id = 'tab',
-          tabPanel("Volcano plot",  plotlyOutput('volcano1') ),
+          tabPanel("Volcano plot",  plotOutput('volcano1') ),
           tabPanel("Table", DT::dataTableOutput("table1"))
         ),
       width = 9)
@@ -55,7 +68,7 @@ ui <- navbarPage(theme=shinytheme("superhero"),"Gene Expression Analysis",
         selectInput(
           inputId = "My_dataset",
           label = "B- Choose Gene ID to show it's full name:",
-          choices = levels(genesAA$V1)),
+          choices = levels(genesEA)),
         width = 3),
              
       mainPanel(
@@ -80,7 +93,7 @@ ui <- navbarPage(theme=shinytheme("superhero"),"Gene Expression Analysis",
         selectInput(
           inputId = "My_dataset",
           label = "B- Choose Gene ID to show it's full name:",
-          choices = levels(genesAA$V1)),
+          choices = levels(genesTP)),
         width = 3),
              
         mainPanel(
@@ -105,7 +118,7 @@ ui <- navbarPage(theme=shinytheme("superhero"),"Gene Expression Analysis",
        selectInput(
          inputId = "My_dataset",
          label = "B- Choose Gene ID to show it's full name:",
-         choices = levels(genesAA$V1)),
+         choices = levels(genesNT)),
       width = 3),
       
       mainPanel(
@@ -121,6 +134,9 @@ ui <- navbarPage(theme=shinytheme("superhero"),"Gene Expression Analysis",
 # ==== server.R ====
 
 server <- function(input, output) {
+  
+  cutoffAA_down <- sort(dea.NT.TP.AA[dea.NT.TP.AA$logFC < -3 , "FDR"])[20]
+  cutoffAA_up <- sort(dea.NT.TP.AA[dea.NT.TP.AA$logFC > 3 , "FDR"])[20]
   
   output$volcano1 <- renderPlot({
     if (is.null(data())) {return(NULL)}
@@ -157,87 +173,94 @@ server <- function(input, output) {
                               max.overlaps = Inf)
   })
   
-  output$table1 <- renderDT(datatable(genesAA))
+  output$table1 <- renderDT(datatable(dea.NT.TP.AA[dea.NT.TP.AA$symbol %in% genesAA, ], 
+                                      rownames = FALSE))
+  
+  cutoffEA_down <- sort(dea.NT.TP.EA[dea.NT.TP.EA$logFC < -3 , "FDR"])[20]
+  cutoffEA_up <- sort(dea.NT.TP.EA[dea.NT.TP.EA$logFC > 3 , "FDR"])[20]
+  
+  output$volcano2 <- renderPlot({
+    if (is.null(data())) {return(NULL)}
+    ggplot(data = dea.NT.TP.EA, aes(x = logFC, y = -log10(FDR))) + 
+      geom_point(aes(colour=FDR < 0.01), pch=20, size=2) +
+      geom_vline(xintercept=c(-3,3), linetype="dotted") +
+      geom_hline(yintercept=c(-log10(0.01)), linetype="dotted") +
+      ggtitle("Differential gene expression of Normal vs Tumor samples of European American ancestry") +
+      xlab("Gene expression change\n log2(FC)") + 
+      ylab("Significance\n -log10(FDR)") +
+      xlim(c(-10,10)) +
+      ylim(c(-10,350)) +
+      theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+      geom_label_repel(data = dea.NT.TP.EA[dea.NT.TP.EA$logFC < -3 & dea.NT.TP.EA$FDR < cutoffEA_down, ], 
+                       aes(label=symbol),
+                       seed = 123,
+                       xlim = c(NA, -5),  # down regulated genes labels before -5 logFC
+                       nudge_x = -5,
+                       hjust = 1,
+                       direction = "y",
+                       max.iter = 1e5,
+                       force = 0.5,
+                       size = 3,
+                       max.overlaps = Inf) +          
+      geom_label_repel(data = dea.NT.TP.EA[dea.NT.TP.EA$logFC > 3 & dea.NT.TP.EA$FDR < cutoffEA_up, ],
+                       aes(label=symbol),
+                       seed = 123,
+                       xlim = c(5, NA),  # up regulated genes labels after 5 logFC
+                       nudge_x = 6,
+                       hjust = 0,
+                       direction = "y",
+                       max.iter = 1e5,
+                       force = 0.5,
+                       size = 3,
+                       max.overlaps = Inf)
+  })
+  
+  output$table2 <- renderDT(datatable(dea.NT.TP.EA[dea.NT.TP.EA$symbol %in% genesEA, ], 
+                                      rownames = FALSE))
+  
+  cutoffTP <- sort(dea.TP$pvalue)[10]
+  shrink.deseq.cutTP <- dea.TP %>% 
+    mutate(TopGeneLabel=ifelse(pvalue<=cutoffTP, symbol, ""))
+  
+  output$volcano3 <- renderPlot({
+    if (is.null(data())) {return(NULL)}
+    ggplot(shrink.deseq.cutTP, aes(x = logFC, y= -log10(FDR))) + 
+    geom_point(aes(colour=FDR < 0.01), pch=20, size=2) +
+    labs(x="log Fold Change", y="-log10(FDR)") + 
+    geom_label_repel(aes(label=TopGeneLabel), 
+                     seed = 123,
+                     max.time = 3,
+                     max.iter = Inf,
+                     size = 3,
+                     box.padding = 2, 
+                     max.overlaps = Inf)
+  })
+  
+  output$table3 <- renderDT(datatable(dea.TP[dea.TP$symbol %in% genesTP, ], 
+                                      rownames = FALSE))
+  
+  cutoffNT <- sort(dea.NT$pvalue)[10]
+  shrink.deseq.cutNT <- dea.NT %>% 
+    mutate(TopGeneLabel=ifelse(pvalue<=cutoffNT, symbol, ""))
+  
+  output$volcano4 <- renderPlot({
+    if (is.null(data())) {return(NULL)}
+    ggplot(shrink.deseq.cutNT, aes(x = logFC, y= -log10(FDR))) + 
+    geom_point(aes(colour=FDR < 0.01), pch=20, size=2) +
+    labs(x="log Fold Change", y="-log10(FDR)") + 
+    geom_label_repel(aes(label=TopGeneLabel), 
+                     seed = 123,
+                     max.time = 3,
+                     max.iter = Inf,
+                     size = 3,
+                     box.padding = 2, 
+                     max.overlaps = Inf)
+  })
+  
+  output$table4 <- renderDT(datatable(dea.NT[dea.NT$symbol %in% genesNT, ], 
+                                      rownames = FALSE))
   
 }
-  
-  # output$odataset <- renderPrint({
-  #   paste(input$My_dataset," = ", gn$Gene[gn$GeneID==input$My_dataset])
-  # })
-  # 
-  # abbreviation <- reactive((GeneCard_ID_Convert(input$My_dataset)))
-  # 
-  # # output for the odataset_link
-  # output$odataset_link <- renderPrint({
-  #   tags$a(
-  #     href = paste(
-  #       "https://www.genecards.org/cgi-bin/carddisp.pl?gene=",
-  #       as.character(abbreviation()[1]),
-  #       sep = ''
-  #     ),
-  #     as.character(abbreviation()[1])
-  #   )
-  # })
-  # 
-  # 
-  # full_file_name <-reactive(paste("./inc/", input$G_groups, ".csv", sep = ""))
-  # 
-  # output$downloadData <- downloadHandler(
-  #   
-  #   filename = full_file_name,
-  #   
-  #   content = function(file){
-  #     write.csv(read.csv(full_file_name()), quote = FALSE,file)
-  #   } )
-  # 
-  # output$myplot = renderPlot({
-  #   g_x <- read.csv(full_file_name())
-  #   
-  #   p <- ggplot(g_x, aes(x=Gene_ID, y=log(Relative_expression_levels),
-  #                        fill=Resistant_or_Susceptible_strains)) +
-  #     
-  #     geom_bar(stat="identity", position=position_dodge()) +
-  #     geom_errorbar(aes(ymin=log(Relative_expression_levels)-(SD/10),
-  #                       ymax=log(Relative_expression_levels)+(SD/10)),width=.3,
-  #                   position=position_dodge(.9))
-  #   p + scale_fill_brewer(palette="Paired")+
-  #     ggtitle(paste("Relative expression levels of candidate gene list","\n",
-  #                   "expressed as mean fold difference between pre- and",
-  #                   "\n", "post-infection ± standard deviation (SD) ")) +
-  #     guides(fill=guide_legend(title=NULL))
-  #   
-  #   p$theme <- theme(axis.text.x = element_text(angle = 90, hjust = 1))
-  #   p$labels$x <- "Gene ID"
-  #   p$labels$y <- "Log (base 10) Relative Expression Levels"
-  #   p$labels$fill <- NULL
-  #   
-  #   return(p)
-  #   
-  # })
-  # 
-  # 
-  # # renderDT() from DT library is a replacement for Shiny renderDataTable()
-  # output$datatable1 <- renderDT(datatable(g1))
-  # output$datatable2 <- renderDT(datatable(g2))
-  # output$datatable3 <- renderDT(datatable(g3))
-  # 
-  # output$text1 <- renderUI({
-  #   if(input$More_info=="Introduction"){
-  #     includeHTML("inc/introduction.html")
-  #   } else if(input$More_info=="Information"){
-  #     includeHTML("inc/information.html")
-  #   } else if(input$More_info=="Help"){
-  #     includeHTML("inc/help.html")
-  #   } else if(input$More_info=="Table-1"){
-  #     DTOutput('datatable1')
-  #   } else if(input$More_info=="Table-2"){
-  #     DTOutput('datatable2')
-  #   } else if(input$More_info=="Table-3"){
-  #     DTOutput('datatable3')
-  #   } else if(input$More_info=="References"){
-  #     includeHTML("inc/references.html")
-  #   }
-  # })
 
 # Run the application 
 shinyApp(ui = ui, server = server)
