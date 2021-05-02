@@ -30,21 +30,38 @@ genesEA <- as.factor(genesEA$V1)
 
 ui <- navbarPage(theme=shinytheme("paper"),"Gene Expression Analysis",
   
-  tabPanel("AA - TP x NT",
-    sidebarLayout(
+  fluidRow(
+    column(12,
+      h6("Breast cancer is one of the most common cancers with more than 1,300,000 cases and 450,000 deaths each year worldwide. In the United States it is the fourth leading cause of death from cancer.")
+    ),
+    column(12,
+      h6("The objective of this study is to investigate the relationship between the ancestry of African American (AA) and European-American (EA) patients with breast cancer and the possible related clinical and genetic changes.")
+    ),
+    column(12,
+      h6("Clinical and genomic data of 1085 patients from the Cancer Genome Atlas project (TCGA-BRCA) were available on the Genomic Data Commons portal (portal.gdc.cancer.gov).")
+    ),
+    column(12,
+      h6("Ancestry analysis and classification of these same patients were obtained from the TCGAA (52.25.87.215/TCGAA).")
+    ),
+    column(12,
+      h6("Next, in each tab, you can check the differential expression analysis on a Volcano Plot and the list of genes differentially expressed in a table for the following categories:")),
+    column(11, h6(strong(">> African American: Normal Samples x Tumor Samples"),  br())),
+    column(11, h6(strong(">> European American: Normal Samples x Tumor Samples"),  br())),
+    column(11, h6(strong(">> Tumor Samples: African American vs European American"),  br())),
+    column(11, h6(strong(">> Normal Samples: African American vs European American"),  br()))
+    ),
+  
+  tabPanel("AA - NT x TP",
       sidebarPanel(
-        selectInput(
-          inputId ="G_groups",
-          label = "A- Choose Group to plot:",
-          choices = c("1- Genes down regulated and
-                      up regulated " = "genesAA1",
-                      "2- Genes down regulated " = "genesAA2",
-                      "3- Genes up regulated  " = "genesAA3")), 
-        selectInput(
-          inputId = "My_dataset",
-          label = "B- Choose Gene ID to show it's full name:",
-          choices = levels(genesAA)),
-      width = 3),
+        fluidRow(
+          h6("Volcano Plot is a type of plot that shows statistical significance (P value) versus magnitude of change (fold change). It enables quick visual identification of genes that are statistically significant.")
+          ),
+        conditionalPanel(
+          'input.tab === "Table"',
+          checkboxGroupInput("vars_tbl_dea.NT.TP.AA", "Select columns to show:",
+                             names(dea.NT.TP.AA), selected = names(dea.NT.TP.AA)[c(1:4)]) 
+        ),
+        width = 4),
     
       mainPanel(
         tabsetPanel(
@@ -52,83 +69,75 @@ ui <- navbarPage(theme=shinytheme("paper"),"Gene Expression Analysis",
           tabPanel("Volcano plot",  plotOutput('volcano1') ),
           tabPanel("Table", DT::dataTableOutput("table1"))
         ),
-      width = 9)
-    )),
+      width = 8
+      )
+    ),
   
   tabPanel("EA - TP x NT",
-    sidebarLayout(
-      sidebarPanel(
-        selectInput(
-          inputId ="G_groups",
-          label = "A- Choose Group to plot:",
-          choices = c("1- Genes down regulated and
-                       up regulated " = "genesEA1",
-                       "2- Genes down regulated " = "genesEA2",
-                       "3- Genes up regulated  " = "genesEA3")), 
-        selectInput(
-          inputId = "My_dataset",
-          label = "B- Choose Gene ID to show it's full name:",
-          choices = levels(genesEA)),
-        width = 3),
-             
-      mainPanel(
-        tabsetPanel(
-          id = 'tab',
-          tabPanel("Volcano plot",  plotlyOutput('volcano2') ),
-          tabPanel("Table", DT::dataTableOutput("table2"))
-        ),
-      width = 9)
-    )),
+           sidebarPanel(
+             fluidRow(
+               h6("Volcano Plot is a type of plot that shows statistical significance (P value) versus magnitude of change (fold change). It enables quick visual identification of genes that are statistically significant.")
+             ),
+             conditionalPanel(
+               'input.tab === "Table',
+               checkboxGroupInput("vars_tbl_dea.NT.TP.EA", "Select columns to show:",
+                                  names(dea.NT.TP.EA), selected = names(dea.NT.TP.EA)[c(1:4)]) 
+             ),
+             width = 4),
+           
+           mainPanel(
+             tabsetPanel(
+               id = 'tab',
+               tabPanel("Volcano plot",  plotOutput('volcano2') ),
+               tabPanel("Table", DT::dataTableOutput("table2"))
+             ),
+             width = 8
+           )
+  ),
   
   tabPanel("TP - AA x EA",
-    sidebarLayout(
-      sidebarPanel(
-        selectInput(
-          inputId ="G_groups",
-          label = "A- Choose Group to plot:",
-          choices = c("1- Genes down regulated and
-                       up regulated " = "genesTP1",
-                       "2- Genes down regulated " = "genesTP2",
-                       "3- Genes up regulated  " = "genesTP3")), 
-        selectInput(
-          inputId = "My_dataset",
-          label = "B- Choose Gene ID to show it's full name:",
-          choices = levels(genesTP)),
-        width = 3),
-             
-        mainPanel(
-           tabsetPanel(
-             id = 'tab',
-             tabPanel("Volcano plot",  plotlyOutput('volcano3') ),
-             tabPanel("Table", DT::dataTableOutput("table3"))
-           ),
-           width = 9)
-        )),
+           sidebarPanel(
+             fluidRow(
+               h6("Volcano Plot is a type of plot that shows statistical significance (P value) versus magnitude of change (fold change). It enables quick visual identification of genes that are statistically significant.")
+             ),
+             conditionalPanel(
+               'input.tab === "Table"',
+               checkboxGroupInput("vars_tbl_dea.TP", "Select columns to show:",
+                                  names(dea.TP), selected = names(dea.TP)[c(1:4)]) 
+             ),
+             width = 4),
+           
+           mainPanel(
+             tabsetPanel(
+               id = 'tab',
+               tabPanel("Volcano plot",  plotOutput('volcano3') ),
+               tabPanel("Table", DT::dataTableOutput("table3"))
+             ),
+             width = 8
+           )
+  ),
   
   tabPanel("NT - AA x EA",
-    sidebarLayout(
-      sidebarPanel(
-        selectInput(
-          inputId ="G_groups",
-          label = "A- Choose Group to plot:",
-          choices = c("1- Genes down regulated and
-                          up regulated " = "genesNT1",
-                             "2- Genes down regulated " = "genesNT2",
-                             "3- Genes up regulated  " = "genesNT3")), 
-       selectInput(
-         inputId = "My_dataset",
-         label = "B- Choose Gene ID to show it's full name:",
-         choices = levels(genesNT)),
-      width = 3),
-      
-      mainPanel(
-        tabsetPanel(
-          id = 'tab',
-          tabPanel("Volcano plot",  plotlyOutput('volcano4') ),
-          tabPanel("Table", DT::dataTableOutput("table4"))
-        ),
-        width = 9)
-      ))
+           sidebarPanel(
+             fluidRow(
+               h6("Volcano Plot is a type of plot that shows statistical significance (P value) versus magnitude of change (fold change). It enables quick visual identification of genes that are statistically significant.")
+             ),
+             conditionalPanel(
+               'input.tab === "Table"',
+               checkboxGroupInput("vars_tbl_dea.NT", "Select columns to show:",
+                                  names(dea.NT), selected = names(dea.NT)[c(1:4)]) 
+             ),
+             width = 4),
+           
+           mainPanel(
+             tabsetPanel(
+               id = 'tab',
+               tabPanel("Volcano plot",  plotOutput('volcano4') ),
+               tabPanel("Table", DT::dataTableOutput("table4"))
+             ),
+             width = 8
+           )
+  )
 )
 
 # ==== server.R ====
@@ -173,8 +182,12 @@ server <- function(input, output) {
                               max.overlaps = Inf)
   })
   
-  output$table1 <- renderDT(datatable(dea.NT.TP.AA[dea.NT.TP.AA$symbol %in% genesAA, ], 
-                                      rownames = FALSE))
+  dea.NT.TP.AA2 = as.data.frame(dea.NT.TP.AA[dea.NT.TP.AA$symbol %in% genesAA, ])
+  row.names(dea.NT.TP.AA2) <- NULL
+  dea.NT.TP.AA3 = dea.NT.TP.AA2[, 1:9]
+  output$table1 = renderDT(
+    dea.NT.TP.AA3[, input$vars_tbl_dea.NT.TP.AA, drop = FALSE] , 
+    server = TRUE)
   
   cutoffEA_down <- sort(dea.NT.TP.EA[dea.NT.TP.EA$logFC < -3 , "FDR"])[20]
   cutoffEA_up <- sort(dea.NT.TP.EA[dea.NT.TP.EA$logFC > 3 , "FDR"])[20]
@@ -215,50 +228,104 @@ server <- function(input, output) {
                        max.overlaps = Inf)
   })
   
-  output$table2 <- renderDT(datatable(dea.NT.TP.EA[dea.NT.TP.EA$symbol %in% genesEA, ], 
-                                      rownames = FALSE))
+  dea.NT.TP.EA2 = as.data.frame(dea.NT.TP.EA[dea.NT.TP.EA$symbol %in% genesEA, ])
+  row.names(dea.NT.TP.EA2) <- NULL
+  dea.NT.TP.EA3 = dea.NT.TP.EA2[, 1:9]
+  output$table2 = renderDT(
+    dea.NT.TP.EA3[, input$vars_tbl_dea.NT.TP.EA, drop = FALSE] , 
+    server = TRUE)
   
-  cutoffTP <- sort(dea.TP$pvalue)[10]
-  shrink.deseq.cutTP <- dea.TP %>% 
-    mutate(TopGeneLabel=ifelse(pvalue<=cutoffTP, symbol, ""))
+  cutoffTP_down <- sort(dea.TP[dea.TP$logFC < -3 , "FDR"])[20]
+  cutoffTP_up <- sort(dea.TP[dea.TP$logFC > 3 , "FDR"])[20]
   
   output$volcano3 <- renderPlot({
     if (is.null(data())) {return(NULL)}
-    ggplot(shrink.deseq.cutTP, aes(x = logFC, y= -log10(FDR))) + 
-    geom_point(aes(colour=FDR < 0.01), pch=20, size=2) +
-    labs(x="log Fold Change", y="-log10(FDR)") + 
-    geom_label_repel(aes(label=TopGeneLabel), 
-                     seed = 123,
-                     max.time = 3,
-                     max.iter = Inf,
-                     size = 3,
-                     box.padding = 2, 
-                     max.overlaps = Inf)
+    ggplot(data = dea.TP, aes(x = logFC, y = -log10(FDR))) + 
+      geom_point(aes(colour=FDR < 0.01), pch=20, size=2) +
+      geom_vline(xintercept=c(-3,3), linetype="dotted") +
+      geom_hline(yintercept=c(-log10(0.01)), linetype="dotted") +
+      ggtitle("Differential gene expression of European American vs African American ancestry of Tumor samples") +
+      xlab("Gene expression change\n log2(FC)") + 
+      ylab("Significance\n -log10(FDR)") +
+      xlim(c(-10,10)) +
+      ylim(c(-10,350)) +
+      theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+      geom_label_repel(data = dea.TP[dea.TP$logFC < -3 & dea.TP$FDR < cutoffTP_down, ], 
+                       aes(label=symbol),
+                       seed = 123,
+                       xlim = c(NA, -5),  # down regulated genes labels before -5 logFC
+                       nudge_x = -5,
+                       hjust = 1,
+                       direction = "y",
+                       max.iter = 1e5,
+                       force = 0.5,
+                       size = 3,
+                       max.overlaps = Inf) +          
+      geom_label_repel(data = dea.TP[dea.TP$logFC > 3 & dea.TP$FDR < cutoffTP_up, ],
+                       aes(label=symbol),
+                       seed = 123,
+                       xlim = c(5, NA),  # up regulated genes labels after 5 logFC
+                       nudge_x = 6,
+                       hjust = 0,
+                       direction = "y",
+                       max.iter = 1e5,
+                       force = 0.5,
+                       size = 3,
+                       max.overlaps = Inf)
   })
   
-  output$table3 <- renderDT(datatable(dea.TP[dea.TP$symbol %in% genesTP, ], 
-                                      rownames = FALSE))
+  dea.TP2 = as.data.frame(dea.TP[dea.TP$symbol %in% genesTP, ])
+  row.names(dea.TP2) <- NULL
+  dea.TP3 = dea.TP2[, 1:9]
+  output$table3 = renderDT(
+    dea.TP3[, input$vars_tbl_dea.TP, drop = FALSE] , 
+    server = TRUE)
   
-  cutoffNT <- sort(dea.NT$pvalue)[10]
-  shrink.deseq.cutNT <- dea.NT %>% 
-    mutate(TopGeneLabel=ifelse(pvalue<=cutoffNT, symbol, ""))
+  cutoffNT_down <- sort(dea.NT[dea.NT$logFC < -3 , "FDR"])[20]
+  cutoffNT_up <- sort(dea.NT[dea.NT$logFC > 3 , "FDR"])[20]
   
   output$volcano4 <- renderPlot({
     if (is.null(data())) {return(NULL)}
-    ggplot(shrink.deseq.cutNT, aes(x = logFC, y= -log10(FDR))) + 
-    geom_point(aes(colour=FDR < 0.01), pch=20, size=2) +
-    labs(x="log Fold Change", y="-log10(FDR)") + 
-    geom_label_repel(aes(label=TopGeneLabel), 
-                     seed = 123,
-                     max.time = 3,
-                     max.iter = Inf,
-                     size = 3,
-                     box.padding = 2, 
-                     max.overlaps = Inf)
+    ggplot(data = dea.NT, aes(x = logFC, y = -log10(FDR))) + 
+      geom_point(aes(colour=FDR < 0.01), pch=20, size=2) +
+      geom_vline(xintercept=c(-3,3), linetype="dotted") +
+      geom_hline(yintercept=c(-log10(0.01)), linetype="dotted") +
+      ggtitle("Differential gene expression of European American vs African American ancestry of Normal samples") +
+      xlab("Gene expression change\n log2(FC)") + 
+      ylab("Significance\n -log10(FDR)") +
+      xlim(c(-10,10)) +
+      ylim(c(-10,350)) +
+      theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+      geom_label_repel(data = dea.NT[dea.NT$logFC < -3 & dea.NT$FDR < cutoffNT_down, ], 
+                       aes(label=symbol),
+                       seed = 123,
+                       xlim = c(NA, -5),  # down regulated genes labels before -5 logFC
+                       nudge_x = -5,
+                       hjust = 1,
+                       direction = "y",
+                       max.iter = 1e5,
+                       force = 0.5,
+                       size = 3,
+                       max.overlaps = Inf) +          
+      geom_label_repel(data = dea.NT[dea.NT$logFC > 3 & dea.NT$FDR < cutoffNT_up, ],
+                       aes(label=symbol),
+                       seed = 123,
+                       xlim = c(5, NA),  # up regulated genes labels after 5 logFC
+                       nudge_x = 6,
+                       hjust = 0,
+                       direction = "y",
+                       max.iter = 1e5,
+                       force = 0.5,
+                       size = 3,
+                       max.overlaps = Inf)
   })
   
-  output$table4 <- renderDT(datatable(dea.NT[dea.NT$symbol %in% genesNT, ], 
-                                      rownames = FALSE))
+  dea.NT2 = as.data.frame(dea.NT[dea.NT$symbol %in% genesNT, ])
+  row.names(dea.NT2) <- NULL
+  dea.NT3 = dea.NT2[, 1:9]
+  output$table4 = renderDT(
+    dea.NT3[, input$vars_tbl_dea.NT, drop = FALSE] , 
+    server = TRUE)
   
 }
 
