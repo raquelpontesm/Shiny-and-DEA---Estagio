@@ -7,6 +7,7 @@ library(ggplot2)
 library(ggrepel)
 library(dplyr)
 library(DT)
+library(VennDiagram)
 
 # ==== Global variables ====
 
@@ -26,6 +27,15 @@ genesAA <- as.factor(genesAA$V1)
 
 genesEA <- read.table("inc/genes.DEA.NT.vs.TP.lst.EA")
 genesEA <- as.factor(genesEA$V1)
+
+genes.10.1093carcinbgaa035 <- read.table("inc/genes.10.1093carcinbgaa035.lst")
+genes.10.1093carcinbgaa035 <- as.factor(genes.10.1093carcinbgaa035$V1)
+
+genes.doi.org10.3390cancers12051220 <- read.table("inc/genes.doi.org10.3390cancers12051220.lst")
+genes.doi.org10.3390cancers12051220 <- as.factor(genes.doi.org10.3390cancers12051220$V1)
+
+genes.doi.10.1001jamaoncol.2017.0595 <- read.table("inc/genes.doi 10.1001jamaoncol.2017.0595.lst")
+genes.doi.10.1001jamaoncol.2017.0595 <- as.factor(genes.doi.10.1001jamaoncol.2017.0595$V1)
 
 # ==== ui.R ==== 
 
@@ -127,8 +137,22 @@ ui <- navbarPage(theme=shinytheme("paper"),"Gene Expression Analysis",
              ),
              width = 8
            )
+  ),
+  tabPanel("Venn Diagram",
+           sidebarPanel(
+             fluidRow(
+               h6("A Venn diagram shows all possible logical relationships between several sets of data.")
+             ),
+             width = 3),
+             mainPanel(
+               tabsetPanel(
+                 id = 'tab',
+                 tabPanel("Display",  plotOutput('venndiagram')
+                          )
+               ),
+               width = 9
+           )
   )
-  
 )
 
 # ==== server.R ====
@@ -301,6 +325,24 @@ server <- function(input, output) {
   output$table3 = renderDT(
     dea.TP3[, input$vars_tbl_dea.TP, drop = FALSE] , 
     server = TRUE)
+  
+  venn.plot <- venn.diagram(
+    x = list(Genes_AA = genesAA, Genes_EA = genesEA, Genes_TP_AAxEA = genesTP, Genes_10.1001jamaoncol.2017.0595 = genes.doi.10.1001jamaoncol.2017.0595, Genes.doi.org10.3390cancers12051220 = genes.doi.org10.3390cancers12051220),
+    height = 1200, width = 1200,
+    resolution = 200,
+    filename = NULL,
+    fill = c("khaki1", "skyblue", "tomato3", "orange", "cyan"),
+    alpha = 0.50,
+    cat.cex = 1.2,
+    cex = 1.5,
+    cat.fontface = "bold"
+  )
+  
+  output$venndiagram <- renderPlot({
+    if (is.null(data())) {return(NULL)}
+    grid.newpage()
+    grid.draw(venn.plot)
+  })
   
 }
 
